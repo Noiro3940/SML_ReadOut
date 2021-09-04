@@ -21,16 +21,17 @@ def Write2File(Filename,Daten):
     F = open(Filename,"a")
     F.write(Daten+'\n')
 
-def ListAllFilesInDiretory(SearchString):
+def ListAllFilesInDiretory(Path,SearchString):
     '''
     Mit dieser Funktion wird eine Liste zurückgegeben mit den gefundenen Files.
     Der SearchString schaut auf den kompletten FileName.
     '''
     FileListe = []
-    for FilesInOrdner in os.listdir('.'):
+    for FilesInOrdner in os.listdir(Path):
         i = FilesInOrdner.find(SearchString)
         if i >=0:
             FileListe.append(FilesInOrdner)
+    FileListe.sort()
     return FileListe
 
 def UnzipProblemReport(PrFilename):
