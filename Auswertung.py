@@ -8,7 +8,7 @@ import Lib.FileLib as fl
 import Lib.Menu as Menu
 
 #Logfile = 'TagesStromverbrauch_23.08.2021.csv'
-Version = '0.1.0'
+Version = 'V0.1.0'
 Path = './Daten/'
 
 
