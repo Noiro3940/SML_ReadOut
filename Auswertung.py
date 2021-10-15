@@ -1,6 +1,8 @@
 #Python3
 '''
 Mit diesem Programm soll es möglich sein die ermittelten Zählerwerte auszuwerten.
+Version V0.4.0
+	- Tagesauswertung jetzt durch Eingabe des Datums möglich.
 '''
 
 import os,sys
@@ -9,7 +11,7 @@ import Lib.Menu as Menu
 import matplotlib.pyplot as plt
 
 #Logfile = 'TagesStromverbrauch_23.08.2021.csv'
-Version = 'V0.3.0'
+Version = 'V0.4.0'
 Path = './Daten/'
 
 def PlotMesswerte(ListOfDate,Messwerte1,Messwerte2,XLabel,Bezeichnung,Einheit='Wh'):
@@ -101,12 +103,24 @@ def TagesverbrauchGesamt(Daten,Auswertung):
 
 		return Verbrauch
 
-def Monatsverbrauch_Tagesverbrauchsanzeige(Fileliste,Verzeichnis,Auswertung,Monat, Jahr,Anzeige=False):
+def TagesLogfile(Fileliste,Verzeichnis,Tag,Monat,Jahr):
+	'''
+	Mit dieser Funktion wird eine Logdatei ermittel, anhand der Übergebenen Werte von Tag ,Monat und Jahr.
+	Der Inhalt wird eingelesen und zurückgegeben, wenn die Datei gefunden wurde.
+	'''
+	for Datei in Fileliste:
+		SplitFilename = Datei.split('.')
+		SplitDayString = SplitFilename[0].split('_')
+		if SplitDayString[1]== Tag and SplitFilename[1] == Monat and SplitFilename[2]==Jahr:
+			DateiInhalt = ReadLogFile(Verzeichnis+Datei)
+			return DateiInhalt,Datei	
+
+def Monatsverbrauch_Tagesverbrauchsanzeige(Fileliste,Verzeichnis,Auswertung,Monat,Jahr,Anzeige=False):
 	'''
 	Mit dieser Funktion kann der Verbrauch eines Monats dargestellt werden. Zusätzlich wird auch der Durchschnittliche Tagesverbrauch berechnet und zurückgeben.
 	return GesamtMonatsVerbrauch, MonatlicherTagesdurchschnittsverbrauch
-
 	'''
+
 	Monatsliste = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
 	GesamtMonatsVerbrauch = 0
 	MonatlicherTagesdurchschnittsverbrauch = 0
@@ -216,33 +230,11 @@ def main():
 	Verzeichnis = Path+SubPath
 	anzeigen = True
 	while True:
-		HauptMenuListe = ['Logfile auswählen','Daten anzeigen','Darstellung Tagesverbrauch An/AUS','Heizung / Strom','Durchschnittlicher-Jahresverbrauch','Monatsverbrauch anzeigen', 'Jahresverbrauch']
+		HauptMenuListe = ['Darstellung Tagesverbrauch An/AUS','Heizung / Strom','Durchschnittlicher-Jahresverbrauch','Tagesverbrauch anzeigen','Monatsverbrauch anzeigen', 'Jahresverbrauch']
 		HauptMenu = Menu.Menu('Auswertung Stromzähler-Logfile '+Version+', Logfile: '+LogFile+' Tagesverbrauch: '+Switch+' Auswertung: '+Auswertung) 
 		Auswahl = HauptMenu.Display(HauptMenuListe,'Beenden')
 
-		if Auswahl == 1:
-			FileListe = fl.ListAllFilesInDiretory(Verzeichnis,'.csv')
-			if len(FileListe) > 0:
-
-				FileMenu = Menu.Menu('Welche Logfile soll verwendet werden?')
-				FileAuswahl = FileMenu.Display(FileListe,'Zurück')
-
-				if FileAuswahl != len(FileListe)+1:
-					LogFile = FileListe[FileAuswahl-1]
-				else:    
-					print('Zurück')
-			else:
-				input('keine Logfile gefunden!')
-				LogFile = ''
-
-		elif Auswahl ==2:#Stellte den Tagesverbrauch da
-			DateiInhalt = ReadLogFile(Verzeichnis+LogFile)
-			Messwerte1,Messwerte2,Stunden = Stundenverbrauch(DateiInhalt,Auswertung,anzeigen)
-			print('Gesamt Tagesverbrauch:',"%.2f" % TagesverbrauchGesamt(DateiInhalt,Auswertung),'KWh')
-			PlotMesswerte(Stunden,Messwerte1,Messwerte2,'Stunde',LogFile)
-			input()
-
-		elif Auswahl ==3:#Schaltet die Darstellung des Stundenverbrauchs Aus/Ein
+		if Auswahl == 1:#Schaltet die Darstellung des Stundenverbrauchs Aus/Ein
 			if anzeigen:
 				Switch = 'Aus'
 				anzeigen = False            
@@ -250,7 +242,7 @@ def main():
 				Switch = 'An'
 				anzeigen = True
 
-		elif Auswahl == 4:#Umschaltung Auswertung Heizung / Strom
+		elif Auswahl == 2:#Umschaltung Auswertung Heizung / Strom
 			if Verzeichnis == Path+'Strom/':
 				Verzeichnis = Path+'Heizung/'
 				Auswertung = 'Heizung'
@@ -258,7 +250,7 @@ def main():
 				Verzeichnis = Path+'Strom/'
 				Auswertung = 'Strom'
 
-		elif Auswahl == 5:#Durchschnittlicher Jähresverbrauch
+		elif Auswahl == 3:#Durchschnittlicher Jähresverbrauch
 			DateiInhalt = ReadLogFile(Verzeichnis+LogFile)
 			JVerbrauch = DurchschnittlicherJahresverbrauch(DateiInhalt,Auswertung)
 			Kosten = JVerbrauch*0.29
@@ -266,7 +258,26 @@ def main():
 			print('Kosten:',"%.2f" % Kosten,'€') 
 			input()
 
-		elif Auswahl == 6:#Monatsverbrauch
+		elif Auswahl == 4:#Tagesverbrauch
+			FileListe = fl.ListAllFilesInDiretory(Verzeichnis,'.csv')
+			Datum  = input('Datum Eingeben: ')
+			DatumSplit = Datum.split('.')
+			Tag = DatumSplit[0]
+			Monat = DatumSplit[1]
+			Jahr = DatumSplit[2]
+			os.system('clear')
+			try:
+				DateiInhalt,LogFile = TagesLogfile(FileListe,Verzeichnis,Tag,Monat,Jahr)
+				Messwerte1,Messwerte2,Stunden = Stundenverbrauch(DateiInhalt,Auswertung,anzeigen)
+				print('Gesamt Tagesverbrauch:',"%.2f" % TagesverbrauchGesamt(DateiInhalt,Auswertung),'KWh')
+				PlotMesswerte(Stunden,Messwerte1,Messwerte2,'Stunde',LogFile)
+				input()
+			except:
+				print('Keine Datei im Verzeichnis',Verzeichnis,'mit dem Datum',Datum,'gefunden!')
+				input()
+
+
+		elif Auswahl == 5:#Monatsverbrauch
 			FileListe = fl.ListAllFilesInDiretory(Verzeichnis,'.csv')
 			Monat = input('Monat Eingeben: ')
 			Jahr = input('Jahr Eingeben: ')
@@ -275,7 +286,7 @@ def main():
 			PlotMesswerte(ListOfDays,Tagensverbrauchsdaten,[],'Tag',Auswertung+' Monat '+Monat+'-'+Jahr,'KWh')
 			input()
 
-		elif Auswahl == 7:#Jahresverbrauch
+		elif Auswahl == 6:#Jahresverbrauch
 			FileListe = fl.ListAllFilesInDiretory(Verzeichnis,'.csv')
 			Jahr = input('Jahr Eingeben: ')
 			os.system('clear')
